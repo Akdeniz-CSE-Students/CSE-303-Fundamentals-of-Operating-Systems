@@ -1,0 +1,1051 @@
+<!doctype html>
+<html lang="tr">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>İşletim Sistemleri: Main Memory Simülasyonu</title>
+        <!-- Tailwind CSS -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- Lucide Icons -->
+        <script src="https://unpkg.com/lucide@latest"></script>
+        <style>
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            }
+            .pattern-dots {
+                background-image: radial-gradient(#475569 1px, transparent 1px);
+                background-size: 10px 10px;
+            }
+            .fade-in {
+                animation: fadeIn 0.3s ease-in-out;
+            }
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            /* Custom Scrollbar */
+            ::-webkit-scrollbar {
+                width: 8px;
+            }
+            ::-webkit-scrollbar-track {
+                background: #1e293b;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: #475569;
+                border-radius: 4px;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: #64748b;
+            }
+        </style>
+    </head>
+    <body class="bg-slate-900 text-slate-200 min-h-screen p-4">
+        <div class="max-w-5xl mx-auto space-y-8">
+            <!-- Header -->
+            <header
+                class="text-center space-y-2 py-6 border-b border-slate-800"
+            >
+                <h1
+                    class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-green-400"
+                >
+                    İşletim Sistemleri: Chapter 8
+                </h1>
+                <p class="text-slate-400 text-lg">
+                    Main Memory (RAM) Yönetimi Simülasyonu
+                </p>
+            </header>
+
+            <!-- Navigation -->
+            <nav
+                class="flex flex-wrap justify-center gap-2 mb-8"
+                id="nav-container"
+            >
+                <button
+                    onclick="switchTab('mmu')"
+                    class="nav-btn active flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all bg-blue-600 text-white shadow-lg shadow-blue-500/30 transform scale-105"
+                    data-tab="mmu"
+                >
+                    <i data-lucide="map"></i> 1. Logical/Physical
+                </button>
+                <button
+                    onclick="switchTab('swap')"
+                    class="nav-btn flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white"
+                    data-tab="swap"
+                >
+                    <i data-lucide="refresh-cw"></i> 2. Swapping
+                </button>
+                <button
+                    onclick="switchTab('frag')"
+                    class="nav-btn flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white"
+                    data-tab="frag"
+                >
+                    <i data-lucide="layers"></i> 3. Allocation
+                </button>
+                <button
+                    onclick="switchTab('page')"
+                    class="nav-btn flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white"
+                    data-tab="page"
+                >
+                    <i data-lucide="database"></i> 4. Paging
+                </button>
+                <button
+                    onclick="switchTab('seg')"
+                    class="nav-btn flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white"
+                    data-tab="seg"
+                >
+                    <i data-lucide="check-circle"></i> 5. Segmentation
+                </button>
+            </nav>
+
+            <!-- Main Content Area -->
+            <main id="content-area" class="min-h-[500px]">
+                <!-- 1. MMU Section -->
+                <section id="mmu" class="tab-content fade-in block">
+                    <div class="mb-6 border-b border-slate-700 pb-4">
+                        <div class="flex items-center gap-3">
+                            <i
+                                data-lucide="map"
+                                class="w-8 h-8 text-blue-400"
+                            ></i>
+                            <h2 class="text-2xl font-bold text-slate-100">
+                                1. Logical vs. Physical Address
+                            </h2>
+                        </div>
+                        <p class="text-slate-400 mt-2">
+                            CPU'nun gördüğü (Sanal) adres ile RAM'deki (Gerçek)
+                            adres arasındaki farkı MMU yönetir.
+                        </p>
+                    </div>
+
+                    <div
+                        class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center"
+                    >
+                        <!-- CPU -->
+                        <div
+                            class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg text-center relative"
+                        >
+                            <div
+                                class="absolute -top-3 left-4 bg-blue-600 text-xs px-2 py-1 rounded text-white"
+                            >
+                                CPU
+                            </div>
+                            <i
+                                data-lucide="cpu"
+                                class="w-12 h-12 mx-auto text-blue-400 mb-2"
+                            ></i>
+                            <p class="text-sm text-slate-400 mb-2">
+                                Logical Address üretir
+                            </p>
+                            <input
+                                type="number"
+                                id="mmu-logical"
+                                value="100"
+                                class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-center text-white"
+                                placeholder="Örn: 100"
+                                oninput="updateMMU()"
+                            />
+                        </div>
+
+                        <!-- MMU -->
+                        <div
+                            class="flex flex-col items-center justify-center space-y-2"
+                        >
+                            <i
+                                id="mmu-arrow-1"
+                                data-lucide="arrow-right"
+                                class="w-8 h-8 text-slate-500"
+                            ></i>
+                            <div
+                                id="mmu-box"
+                                class="p-4 rounded-lg border-2 border-purple-500 bg-slate-800 transition-all"
+                            >
+                                <h4
+                                    class="font-bold text-purple-400 text-center mb-2"
+                                >
+                                    MMU
+                                </h4>
+                                <div class="text-xs text-slate-300">
+                                    Base Register:
+                                </div>
+                                <input
+                                    type="number"
+                                    id="mmu-base"
+                                    value="50000"
+                                    class="w-24 bg-slate-900 border border-slate-600 rounded p-1 text-xs text-center text-white mb-2"
+                                    oninput="updateMMU()"
+                                />
+                                <div
+                                    class="text-xs text-center font-mono text-green-400"
+                                >
+                                    + Topla
+                                </div>
+                            </div>
+                            <i
+                                id="mmu-arrow-2"
+                                data-lucide="arrow-right"
+                                class="w-8 h-8 text-slate-500"
+                            ></i>
+                        </div>
+
+                        <!-- RAM -->
+                        <div
+                            class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg text-center relative"
+                        >
+                            <div
+                                class="absolute -top-3 left-4 bg-green-600 text-xs px-2 py-1 rounded text-white"
+                            >
+                                RAM
+                            </div>
+                            <i
+                                data-lucide="database"
+                                class="w-12 h-12 mx-auto text-green-400 mb-2"
+                            ></i>
+                            <p class="text-sm text-slate-400 mb-2">
+                                Physical Address
+                            </p>
+                            <div
+                                id="mmu-result"
+                                class="text-3xl font-mono font-bold text-green-400"
+                            >
+                                50100
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center mt-6">
+                        <button
+                            onclick="animateMMU()"
+                            class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2"
+                        >
+                            <i data-lucide="refresh-cw" id="mmu-btn-icon"></i>
+                            Çeviriyi Simüle Et
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 2. Swapping Section -->
+                <section id="swap" class="tab-content fade-in hidden">
+                    <div class="mb-6 border-b border-slate-700 pb-4">
+                        <div class="flex items-center gap-3">
+                            <i
+                                data-lucide="refresh-cw"
+                                class="w-8 h-8 text-blue-400"
+                            ></i>
+                            <h2 class="text-2xl font-bold text-slate-100">
+                                2. Swapping (Takas)
+                            </h2>
+                        </div>
+                        <p class="text-slate-400 mt-2">
+                            RAM dolduğunda aktif olmayan programlar diske
+                            (Backing Store) postalanır.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- RAM List -->
+                        <div
+                            class="bg-slate-800 p-4 rounded-lg border-2 border-green-600/50"
+                        >
+                            <h3
+                                class="flex items-center gap-2 font-bold text-green-400 mb-4"
+                            >
+                                <i data-lucide="database" class="w-5 h-5"></i>
+                                Main Memory (RAM)
+                            </h3>
+                            <div id="swap-ram-list" class="space-y-2">
+                                <!-- JS ile doldurulacak -->
+                            </div>
+                        </div>
+
+                        <!-- Disk List -->
+                        <div
+                            class="bg-slate-800 p-4 rounded-lg border-2 border-orange-600/50"
+                        >
+                            <h3
+                                class="flex items-center gap-2 font-bold text-orange-400 mb-4"
+                            >
+                                <i data-lucide="hard-drive" class="w-5 h-5"></i>
+                                Backing Store (HDD/SSD)
+                            </h3>
+                            <div id="swap-disk-list" class="space-y-2">
+                                <!-- JS ile doldurulacak -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        id="swap-status"
+                        class="mt-6 p-3 bg-slate-900 rounded border-l-4 border-yellow-500 text-yellow-100 font-mono transition-all"
+                    >
+                        Status: Sistem Beklemede
+                    </div>
+                </section>
+
+                <!-- 3. Allocation Section -->
+                <section id="frag" class="tab-content fade-in hidden">
+                    <div class="mb-6 border-b border-slate-700 pb-4">
+                        <div class="flex items-center gap-3">
+                            <i
+                                data-lucide="layers"
+                                class="w-8 h-8 text-blue-400"
+                            ></i>
+                            <h2 class="text-2xl font-bold text-slate-100">
+                                3. Contiguous Allocation
+                            </h2>
+                        </div>
+                        <p class="text-slate-400 mt-2">
+                            Eski usul: Process tek parça olmalı. Sorun: External
+                            Fragmentation.
+                        </p>
+                    </div>
+
+                    <div
+                        id="memory-bar"
+                        class="relative h-24 bg-slate-700 rounded-lg flex overflow-hidden border-2 border-slate-600 mb-6 transition-all"
+                    >
+                        <!-- JS ile doldurulacak -->
+                    </div>
+
+                    <div class="flex flex-wrap gap-4 items-center">
+                        <button
+                            onclick="allocAddProcess()"
+                            class="border border-slate-500 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg font-medium transition-all"
+                        >
+                            3br Boyutunda Process Ekle
+                        </button>
+                        <button
+                            onclick="allocCompact()"
+                            class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2"
+                        >
+                            Compaction (Sıkıştır)
+                        </button>
+                    </div>
+
+                    <div id="alloc-msg" class="mt-4 p-3 rounded hidden"></div>
+
+                    <div class="text-sm text-slate-400 mt-4">
+                        * "External Fragmentation": Toplam boş alan yeterli olsa
+                        bile, bu alanın bitişik olmaması durumudur. "İsviçre
+                        Peyniri" benzetmesi buradan gelir.
+                    </div>
+                </section>
+
+                <!-- 4. Paging Section -->
+                <section id="page" class="tab-content fade-in hidden">
+                    <div class="mb-6 border-b border-slate-700 pb-4">
+                        <div class="flex items-center gap-3">
+                            <i
+                                data-lucide="database"
+                                class="w-8 h-8 text-blue-400"
+                            ></i>
+                            <h2 class="text-2xl font-bold text-slate-100">
+                                4. Paging (Sayfalama)
+                            </h2>
+                        </div>
+                        <p class="text-slate-400 mt-2">
+                            Modern çözüm. Programı 'Page', RAM'i 'Frame' denen
+                            eşit parçalara bölmek.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                        <!-- CPU/TLB -->
+                        <div class="space-y-4">
+                            <div
+                                id="tlb-card"
+                                class="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-lg transition-colors duration-300"
+                            >
+                                <h4
+                                    class="font-bold text-center mb-2 text-slate-200"
+                                >
+                                    CPU / TLB
+                                </h4>
+                                <div class="bg-slate-900 p-2 rounded">
+                                    <div
+                                        class="text-xs text-slate-400 border-b border-slate-700 mb-1 pb-1"
+                                    >
+                                        TLB Cache
+                                    </div>
+                                    <div
+                                        class="flex justify-between text-xs text-green-300"
+                                    >
+                                        <span>P:0</span><span>F:5</span>
+                                    </div>
+                                    <div
+                                        class="flex justify-between text-xs text-green-300"
+                                    >
+                                        <span>P:2</span><span>F:9</span>
+                                    </div>
+                                </div>
+                                <div class="mt-4 grid grid-cols-2 gap-2">
+                                    <button
+                                        onclick="pageAccess(0)"
+                                        class="bg-blue-700 hover:bg-blue-600 text-white text-xs py-1 px-2 rounded"
+                                    >
+                                        P0 Eriş
+                                    </button>
+                                    <button
+                                        onclick="pageAccess(1)"
+                                        class="bg-blue-700 hover:bg-blue-600 text-white text-xs py-1 px-2 rounded"
+                                    >
+                                        P1 Eriş
+                                    </button>
+                                    <button
+                                        onclick="pageAccess(2)"
+                                        class="bg-blue-700 hover:bg-blue-600 text-white text-xs py-1 px-2 rounded"
+                                    >
+                                        P2 Eriş
+                                    </button>
+                                    <button
+                                        onclick="pageAccess(3)"
+                                        class="bg-blue-700 hover:bg-blue-600 text-white text-xs py-1 px-2 rounded"
+                                    >
+                                        P3 Eriş
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Logical Memory -->
+                        <div>
+                            <h4 class="text-center text-slate-400 mb-2">
+                                Logical Mem
+                            </h4>
+                            <div class="flex flex-col gap-1">
+                                <div
+                                    class="bg-blue-900/40 border border-blue-600/30 p-2 text-center rounded text-slate-200"
+                                >
+                                    Page 0
+                                </div>
+                                <div
+                                    class="bg-blue-900/40 border border-blue-600/30 p-2 text-center rounded text-slate-200"
+                                >
+                                    Page 1
+                                </div>
+                                <div
+                                    class="bg-blue-900/40 border border-blue-600/30 p-2 text-center rounded text-slate-200"
+                                >
+                                    Page 2
+                                </div>
+                                <div
+                                    class="bg-blue-900/40 border border-blue-600/30 p-2 text-center rounded text-slate-200"
+                                >
+                                    Page 3
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Page Table -->
+                        <div
+                            id="pt-container"
+                            class="transition-transform duration-500"
+                        >
+                            <h4 class="text-center text-slate-400 mb-2">
+                                Page Table
+                            </h4>
+                            <div
+                                id="pt-box"
+                                class="bg-slate-800 border-2 border-slate-600 rounded p-2 transition-colors duration-300"
+                            >
+                                <div
+                                    class="grid grid-cols-2 gap-2 font-mono text-xs text-center border-b border-slate-600 pb-1 mb-1 text-slate-400"
+                                >
+                                    <span>Page</span><span>Frame</span>
+                                </div>
+                                <!-- Rows -->
+                                <div
+                                    class="grid grid-cols-2 gap-2 text-center text-slate-200"
+                                >
+                                    <span>0</span
+                                    ><span class="text-yellow-400">5</span>
+                                </div>
+                                <div
+                                    class="grid grid-cols-2 gap-2 text-center text-slate-200"
+                                >
+                                    <span>1</span
+                                    ><span class="text-yellow-400">2</span>
+                                </div>
+                                <div
+                                    class="grid grid-cols-2 gap-2 text-center text-slate-200"
+                                >
+                                    <span>2</span
+                                    ><span class="text-yellow-400">9</span>
+                                </div>
+                                <div
+                                    class="grid grid-cols-2 gap-2 text-center text-slate-200"
+                                >
+                                    <span>3</span
+                                    ><span class="text-yellow-400">1</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Physical RAM -->
+                        <div
+                            id="ram-container"
+                            class="transition-transform duration-500"
+                        >
+                            <h4 class="text-center text-slate-400 mb-2">
+                                Physical RAM
+                            </h4>
+                            <div
+                                id="ram-grid"
+                                class="grid grid-cols-2 gap-1 p-2 bg-slate-800 border-2 border-slate-600 rounded transition-colors duration-300"
+                            >
+                                <!-- JS will populate -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-slate-950 p-4 rounded border border-slate-700 font-mono text-green-400 min-h-[60px] flex items-center mt-6"
+                    >
+                        <span class="mr-2 text-slate-500">&gt;</span>
+                        <span id="page-log">Bekleniyor...</span>
+                    </div>
+
+                    <div
+                        class="bg-indigo-900/30 p-4 rounded-lg border border-indigo-500/50 mt-4"
+                    >
+                        <h5
+                            class="font-bold text-indigo-300 flex items-center gap-2"
+                        >
+                            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                            Sınav Tüyosu: EAT (Effective Access Time)
+                        </h5>
+                        <p class="text-sm text-slate-300 mt-1">
+                            <strong>Formül:</strong>
+                            <code
+                                >HitRate * (TLB + RAM) + MissRate * (TLB + RAM +
+                                RAM)</code
+                            ><br />
+                            <span class="text-xs text-slate-400"
+                                >*Hit durumunda 1 RAM erişimi, Miss durumunda 2
+                                RAM erişimi (Tablo + Veri) yapılır.</span
+                            >
+                        </p>
+                    </div>
+                </section>
+
+                <!-- 5. Segmentation Section -->
+                <section id="seg" class="tab-content fade-in hidden">
+                    <div class="mb-6 border-b border-slate-700 pb-4">
+                        <div class="flex items-center gap-3">
+                            <i
+                                data-lucide="check-circle"
+                                class="w-8 h-8 text-blue-400"
+                            ></i>
+                            <h2 class="text-2xl font-bold text-slate-100">
+                                5. Segmentation (Bölümlendirme)
+                            </h2>
+                        </div>
+                        <p class="text-slate-400 mt-2">
+                            Programı Code, Stack, Data gibi mantıksal bölümlere
+                            ayırırız.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div
+                            class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg"
+                        >
+                            <h3 class="font-bold text-slate-200 mb-4">
+                                Logical Address Oluştur
+                            </h3>
+
+                            <div class="space-y-4">
+                                <div>
+                                    <label
+                                        class="block text-sm text-slate-400 mb-1"
+                                        >Segment Seç:</label
+                                    >
+                                    <div class="flex gap-2" id="seg-buttons">
+                                        <button
+                                            onclick="setSegment('code')"
+                                            id="btn-code"
+                                            class="seg-btn bg-blue-600 text-white px-3 py-1 rounded text-sm capitalize"
+                                        >
+                                            code
+                                        </button>
+                                        <button
+                                            onclick="setSegment('stack')"
+                                            id="btn-stack"
+                                            class="seg-btn bg-slate-700 text-slate-300 px-3 py-1 rounded text-sm capitalize"
+                                        >
+                                            stack
+                                        </button>
+                                        <button
+                                            onclick="setSegment('data')"
+                                            id="btn-data"
+                                            class="seg-btn bg-slate-700 text-slate-300 px-3 py-1 rounded text-sm capitalize"
+                                        >
+                                            data
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label
+                                        class="block text-sm text-slate-400 mb-1"
+                                        >Offset (Konum):</label
+                                    >
+                                    <input
+                                        type="number"
+                                        id="seg-offset"
+                                        value="0"
+                                        class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white"
+                                        oninput="updateSegLimitDisplay()"
+                                    />
+                                    <p class="text-xs text-slate-500 mt-1">
+                                        Seçili segment limiti:
+                                        <strong id="seg-limit-display"
+                                            >1000</strong
+                                        >
+                                    </p>
+                                </div>
+
+                                <button
+                                    onclick="calcSegmentation()"
+                                    class="w-full bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium transition-all"
+                                >
+                                    Hesapla
+                                </button>
+                            </div>
+                        </div>
+
+                        <div
+                            class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg flex flex-col items-center justify-center text-center min-h-[200px]"
+                        >
+                            <div id="seg-result" class="hidden w-full">
+                                <!-- JS will inject content -->
+                            </div>
+                            <p id="seg-placeholder" class="text-slate-500">
+                                Sonuç burada görünecek...
+                            </p>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <footer
+                class="text-center text-slate-500 text-sm py-8 border-t border-slate-800"
+            >
+                <p>Sınavında başarılar! 🚀 | Tek Dosya HTML/JS/CSS</p>
+            </footer>
+        </div>
+
+        <!-- JAVASCRIPT LOGIC -->
+        <script>
+            // --- Tab Switching ---
+            function switchTab(tabId) {
+                // Hide all contents
+                document
+                    .querySelectorAll(".tab-content")
+                    .forEach((el) => el.classList.add("hidden"));
+                // Show selected
+                document.getElementById(tabId).classList.remove("hidden");
+
+                // Update buttons
+                document.querySelectorAll(".nav-btn").forEach((btn) => {
+                    if (btn.dataset.tab === tabId) {
+                        btn.classList.remove(
+                            "bg-slate-800",
+                            "text-slate-400",
+                            "hover:bg-slate-700",
+                            "hover:text-white",
+                        );
+                        btn.classList.add(
+                            "bg-blue-600",
+                            "text-white",
+                            "shadow-lg",
+                            "shadow-blue-500/30",
+                            "scale-105",
+                        );
+                    } else {
+                        btn.classList.add(
+                            "bg-slate-800",
+                            "text-slate-400",
+                            "hover:bg-slate-700",
+                            "hover:text-white",
+                        );
+                        btn.classList.remove(
+                            "bg-blue-600",
+                            "text-white",
+                            "shadow-lg",
+                            "shadow-blue-500/30",
+                            "scale-105",
+                        );
+                    }
+                });
+                lucide.createIcons();
+            }
+
+            // --- 1. MMU Logic ---
+            function updateMMU() {
+                const logical =
+                    parseInt(document.getElementById("mmu-logical").value) || 0;
+                const base =
+                    parseInt(document.getElementById("mmu-base").value) || 0;
+                document.getElementById("mmu-result").innerText =
+                    logical + base;
+            }
+
+            function animateMMU() {
+                const box = document.getElementById("mmu-box");
+                const arrows = [
+                    document.getElementById("mmu-arrow-1"),
+                    document.getElementById("mmu-arrow-2"),
+                ];
+                const icon = document.getElementById("mmu-btn-icon");
+
+                box.classList.remove("border-purple-500", "bg-slate-800");
+                box.classList.add("border-green-500", "bg-green-900/20");
+                arrows.forEach((a) =>
+                    a.classList.add("animate-pulse", "text-green-400"),
+                );
+                icon.classList.add("animate-spin");
+
+                setTimeout(() => {
+                    box.classList.add("border-purple-500", "bg-slate-800");
+                    box.classList.remove("border-green-500", "bg-green-900/20");
+                    arrows.forEach((a) =>
+                        a.classList.remove("animate-pulse", "text-green-400"),
+                    );
+                    icon.classList.remove("animate-spin");
+                }, 1000);
+            }
+
+            // --- 2. Swapping Logic ---
+            let swapRam = ["OS Kernel", "Process A", "Process B", null];
+            let swapDisk = ["Process C (Inactive)", "Process D (Inactive)"];
+
+            function renderSwapping() {
+                const ramList = document.getElementById("swap-ram-list");
+                const diskList = document.getElementById("swap-disk-list");
+
+                ramList.innerHTML = "";
+                diskList.innerHTML = "";
+
+                // RAM Render
+                swapRam.forEach((p, i) => {
+                    const div = document.createElement("div");
+                    div.className = `p-3 rounded flex justify-between items-center ${
+                        p
+                            ? p.includes("OS")
+                                ? "bg-slate-700 text-slate-400 border border-slate-600"
+                                : "bg-green-900/40 border border-green-600 text-green-100"
+                            : "bg-slate-900/50 border border-dashed border-slate-600 text-slate-500"
+                    }`;
+
+                    let btnHtml = "";
+                    if (p && !p.includes("OS")) {
+                        btnHtml = `<button onclick="doSwapOut(${i})" class="text-xs bg-red-600 hover:bg-red-500 px-2 py-1 rounded text-white transition-colors">Swap Out</button>`;
+                    }
+
+                    div.innerHTML = `<span>${p || "Boş Alan"}</span>${btnHtml}`;
+                    ramList.appendChild(div);
+                });
+
+                // Disk Render
+                if (swapDisk.length === 0) {
+                    diskList.innerHTML =
+                        '<div class="text-slate-500 text-sm italic">Disk boş.</div>';
+                } else {
+                    swapDisk.forEach((p, i) => {
+                        const div = document.createElement("div");
+                        div.className =
+                            "p-3 bg-orange-900/20 border border-orange-600/50 rounded text-orange-200 flex justify-between items-center";
+                        div.innerHTML = `<span>${p}</span><button onclick="doSwapIn(${i})" class="text-xs bg-blue-600 hover:bg-blue-500 px-2 py-1 rounded text-white transition-colors">Swap In</button>`;
+                        diskList.appendChild(div);
+                    });
+                }
+            }
+
+            function setSwapStatus(msg) {
+                const el = document.getElementById("swap-status");
+                el.innerText = `Status: ${msg}`;
+                el.classList.add("animate-pulse");
+                setTimeout(() => el.classList.remove("animate-pulse"), 500);
+            }
+
+            function doSwapOut(index) {
+                const process = swapRam[index];
+                if (!process) return;
+                setSwapStatus(
+                    `${process} RAM'den diske taşınıyor (Swap Out)...`,
+                );
+                setTimeout(() => {
+                    swapRam[index] = null;
+                    swapDisk.push(`${process} (Inactive)`);
+                    setSwapStatus("İşlem tamamlandı. RAM'de yer açıldı.");
+                    renderSwapping();
+                }, 800);
+            }
+
+            function doSwapIn(index) {
+                const process = swapDisk[index];
+                const emptyIdx = swapRam.indexOf(null);
+                if (emptyIdx === -1) {
+                    setSwapStatus(
+                        "HATA: RAM dolu! Önce bir process'i Swap Out yapmalısın.",
+                    );
+                    return;
+                }
+                setSwapStatus(`${process} diskten RAM'e alınıyor (Swap In)...`);
+                setTimeout(() => {
+                    swapDisk.splice(index, 1);
+                    swapRam[emptyIdx] = process.replace(" (Inactive)", "");
+                    setSwapStatus("İşlem tamamlandı. Process çalışmaya hazır.");
+                    renderSwapping();
+                }, 800);
+            }
+
+            // --- 3. Allocation Logic ---
+            let allocMem = [
+                { id: 1, name: "A", size: 2 },
+                { id: 0, name: "Free", size: 1 },
+                { id: 2, name: "B", size: 3 },
+                { id: 0, name: "Free", size: 2 },
+                { id: 3, name: "C", size: 1 },
+                { id: 0, name: "Free", size: 1 },
+            ];
+
+            function renderAllocation() {
+                const bar = document.getElementById("memory-bar");
+                bar.innerHTML = "";
+                allocMem.forEach((block) => {
+                    const div = document.createElement("div");
+                    div.style.flex = block.size;
+                    div.className = `flex items-center justify-center border-r border-slate-800 transition-all duration-1000 ${
+                        block.id === 0
+                            ? "bg-slate-900/50 pattern-dots"
+                            : "bg-gradient-to-br from-indigo-600 to-indigo-800 text-white font-bold"
+                    }`;
+                    div.innerHTML =
+                        block.id === 0
+                            ? `<span class="text-xs text-slate-500 text-center">${block.size}br<br/>Boş</span>`
+                            : block.name;
+                    bar.appendChild(div);
+                });
+            }
+
+            function setAllocMsg(msg, isError = false) {
+                const el = document.getElementById("alloc-msg");
+                el.innerText = msg;
+                el.className = `mt-4 p-3 rounded block ${isError ? "bg-red-900/30 text-red-200 border border-red-800" : "bg-green-900/30 text-green-200 border border-green-800"}`;
+            }
+
+            function allocAddProcess() {
+                const needed = 3;
+                const foundIdx = allocMem.findIndex(
+                    (m) => m.id === 0 && m.size >= needed,
+                );
+                const totalFree = allocMem
+                    .filter((m) => m.id === 0)
+                    .reduce((acc, c) => acc + c.size, 0);
+
+                if (foundIdx !== -1) {
+                    // Basitleştirilmiş: Sadece tam sığarsa ekleme yapmıyoruz, demo amaçlı yer buldu diyelim
+                    // Gerçek mantıkta split gerekir ama bu demo
+                    setAllocMsg(
+                        "Boşluk bulundu, Process D eklendi! (Demo: Sadece mesaj)",
+                        false,
+                    );
+                } else {
+                    if (totalFree >= needed) {
+                        setAllocMsg(
+                            `HATA: External Fragmentation! Toplamda ${totalFree}br boş var ama parça parça.`,
+                            true,
+                        );
+                    } else {
+                        setAllocMsg("Yetersiz bellek.", true);
+                    }
+                }
+            }
+
+            function allocCompact() {
+                setAllocMsg("Sıkıştırma (Compaction) yapılıyor...", false);
+                setTimeout(() => {
+                    const used = allocMem.filter((m) => m.id !== 0);
+                    const freeSize = allocMem
+                        .filter((m) => m.id === 0)
+                        .reduce((acc, c) => acc + c.size, 0);
+                    allocMem = [
+                        ...used,
+                        { id: 0, name: "Free (Birleşik)", size: freeSize },
+                    ];
+                    renderAllocation();
+                    setAllocMsg(
+                        "Compaction tamamlandı! Artık büyük processler sığabilir.",
+                        false,
+                    );
+                }, 1000);
+            }
+
+            // --- 4. Paging Logic ---
+            const pageTable = { 0: 5, 1: 2, 2: 9, 3: 1 };
+            const tlb = { 0: 5, 2: 9 };
+            const pageLog = document.getElementById("page-log");
+            const tlbCard = document.getElementById("tlb-card");
+            const ptBox = document.getElementById("pt-box");
+            const ramGrid = document.getElementById("ram-grid");
+
+            // Init RAM Grid
+            function initRamGrid() {
+                ramGrid.innerHTML = "";
+                const usedFrames = Object.values(pageTable);
+                for (let i = 0; i < 12; i++) {
+                    const div = document.createElement("div");
+                    const isOccupied = usedFrames.includes(i);
+                    div.className = `h-8 flex items-center justify-center text-xs rounded border ${
+                        isOccupied
+                            ? "bg-green-900/50 border-green-600 text-green-200"
+                            : "bg-slate-900 border-slate-700 text-slate-600"
+                    }`;
+                    div.innerText = `F${i}`;
+                    div.id = `frame-${i}`;
+                    ramGrid.appendChild(div);
+                }
+            }
+
+            function resetPageStyles() {
+                tlbCard.classList.remove("border-green-400", "bg-green-900/10");
+                ptBox.classList.remove("border-yellow-400");
+                ramGrid.classList.remove("border-green-400");
+                document
+                    .getElementById("pt-container")
+                    .classList.remove("scale-105");
+                document
+                    .getElementById("ram-container")
+                    .classList.remove("scale-105");
+            }
+
+            function pageAccess(pageId) {
+                resetPageStyles();
+                pageLog.innerText = `CPU Logical Address (Page ${pageId}) üretti.`;
+
+                // TLB Check
+                setTimeout(() => {
+                    tlbCard.classList.add(
+                        "border-green-400",
+                        "bg-green-900/10",
+                    );
+                    if (tlb[pageId] !== undefined) {
+                        // HIT
+                        pageLog.innerText = `TLB HIT! Page ${pageId} için Frame ${tlb[pageId]} hemen bulundu.`;
+                        setTimeout(() => {
+                            ramGrid.classList.add("border-green-400");
+                            document
+                                .getElementById("ram-container")
+                                .classList.add("scale-105");
+                            pageLog.innerText = `Frame ${tlb[pageId]}'deki veriye erişildi. İşlem bitti.`;
+                        }, 1500);
+                    } else {
+                        // MISS
+                        pageLog.innerText = `TLB MISS! Page ${pageId} TLB'de yok. RAM'deki tabloya gidiliyor...`;
+                        setTimeout(() => {
+                            tlbCard.classList.remove(
+                                "border-green-400",
+                                "bg-green-900/10",
+                            );
+                            ptBox.classList.add("border-yellow-400");
+                            document
+                                .getElementById("pt-container")
+                                .classList.add("scale-105");
+                            pageLog.innerText = `Page Table okundu. Page ${pageId} -> Frame ${pageTable[pageId]} bulundu.`;
+
+                            setTimeout(() => {
+                                ptBox.classList.remove("border-yellow-400");
+                                document
+                                    .getElementById("pt-container")
+                                    .classList.remove("scale-105");
+                                ramGrid.classList.add("border-green-400");
+                                document
+                                    .getElementById("ram-container")
+                                    .classList.add("scale-105");
+                                pageLog.innerText = `Frame ${pageTable[pageId]}'deki veriye erişildi.`;
+                            }, 1500);
+                        }, 1500);
+                    }
+                }, 1000);
+            }
+
+            // --- 5. Segmentation Logic ---
+            let currentSeg = "code";
+            const segments = {
+                code: { base: 32000, limit: 1000 },
+                stack: { base: 45000, limit: 500 },
+                data: { base: 60000, limit: 2000 },
+            };
+
+            function setSegment(seg) {
+                currentSeg = seg;
+                document.querySelectorAll(".seg-btn").forEach((btn) => {
+                    if (btn.id === `btn-${seg}`) {
+                        btn.classList.remove("bg-slate-700", "text-slate-300");
+                        btn.classList.add("bg-blue-600", "text-white");
+                    } else {
+                        btn.classList.remove("bg-blue-600", "text-white");
+                        btn.classList.add("bg-slate-700", "text-slate-300");
+                    }
+                });
+                updateSegLimitDisplay();
+            }
+
+            function updateSegLimitDisplay() {
+                document.getElementById("seg-limit-display").innerText =
+                    segments[currentSeg].limit;
+            }
+
+            function calcSegmentation() {
+                const offset =
+                    parseInt(document.getElementById("seg-offset").value) || 0;
+                const limit = segments[currentSeg].limit;
+                const base = segments[currentSeg].base;
+
+                const resultBox = document.getElementById("seg-result");
+                const placeholder = document.getElementById("seg-placeholder");
+
+                placeholder.classList.add("hidden");
+                resultBox.classList.remove("hidden");
+
+                if (offset < limit) {
+                    const phys = base + offset;
+                    resultBox.className =
+                        "p-6 rounded-lg border-2 border-green-500 bg-green-900/20 w-full";
+                    resultBox.innerHTML = `
+                    <i data-lucide="check-circle" class="w-12 h-12 text-green-500 mx-auto mb-2"></i>
+                    <h4 class="text-xl font-bold text-green-400">Physical: ${phys}</h4>
+                    <p class="text-green-200 text-sm mt-2">Erişim Başarılı!</p>
+                    <p class="text-xs text-slate-400 mt-1">Base (${base}) + Offset (${offset})</p>
+                `;
+                } else {
+                    resultBox.className =
+                        "p-6 rounded-lg border-2 border-red-500 bg-red-900/20 w-full";
+                    resultBox.innerHTML = `
+                    <i data-lucide="alert-triangle" class="w-12 h-12 text-red-500 mx-auto mb-2"></i>
+                    <h4 class="text-xl font-bold text-red-400">ERROR</h4>
+                    <p class="text-red-200 text-sm mt-2">TRAP: Addressing Error! (Offset >= Limit)</p>
+                `;
+                }
+                lucide.createIcons();
+            }
+
+            // --- Initialization ---
+            window.onload = function () {
+                lucide.createIcons();
+                renderSwapping();
+                renderAllocation();
+                initRamGrid();
+                updateMMU();
+                updateSegLimitDisplay();
+            };
+        </script>
+    </body>
+</html>

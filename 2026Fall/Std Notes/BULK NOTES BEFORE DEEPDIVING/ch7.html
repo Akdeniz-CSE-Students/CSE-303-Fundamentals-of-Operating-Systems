@@ -1,0 +1,994 @@
+<!doctype html>
+<html lang="tr">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Deadlock Simülasyonu</title>
+
+        <!-- Tailwind CSS (Stil için) -->
+        <script src="https://cdn.tailwindcss.com"></script>
+
+        <!-- Lucide Icons (İkonlar için) -->
+        <script src="https://unpkg.com/lucide@latest"></script>
+
+        <style>
+            /* Geçiş Animasyonları */
+            .fade-in {
+                animation: fadeIn 0.3s ease-in-out;
+            }
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            /* Trafik Arabaları için özel pozisyonlar */
+            .car-transition {
+                transition: all 1s ease-in-out;
+            }
+
+            /* Scrollbar düzenlemesi */
+            ::-webkit-scrollbar {
+                width: 8px;
+            }
+            ::-webkit-scrollbar-track {
+                background: #f1f1f1;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: #cbd5e1;
+                border-radius: 4px;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: #94a3b8;
+            }
+        </style>
+    </head>
+    <body class="bg-slate-50 font-sans text-gray-800 p-4 md:p-8 min-h-screen">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <header class="text-center mb-8">
+                <h1
+                    class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-500 mb-2"
+                >
+                    DEADLOCK
+                </h1>
+                <p class="text-lg text-gray-600">
+                    Ölümcül Kilitlenme & İşletim Sistemi Kabusları
+                </p>
+            </header>
+
+            <div
+                class="bg-white rounded-2xl shadow-xl overflow-hidden min-h-[650px] flex flex-col md:flex-row"
+            >
+                <!-- Sidebar Navigation -->
+                <div
+                    class="w-full md:w-1/3 bg-gray-50 p-4 border-r border-gray-200 overflow-y-auto max-h-[300px] md:max-h-full"
+                >
+                    <h3
+                        class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4"
+                    >
+                        İÇİNDEKİLER
+                    </h3>
+                    <div id="nav-buttons" class="flex flex-col gap-2">
+                        <!-- Navigasyon butonları JS ile buraya eklenecek -->
+                    </div>
+
+                    <div
+                        class="mt-8 p-4 bg-yellow-50 rounded-lg border border-yellow-200"
+                    >
+                        <h4 class="font-bold text-yellow-800 text-xs mb-1">
+                            SINAV TÜYOSU
+                        </h4>
+                        <p class="text-xs text-yellow-700">
+                            "Deadlock Characterization" (4 şart) sınavda kesin
+                            çıkar. Hepsini ezberle!
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Main Content Area -->
+                <div
+                    class="w-full md:w-2/3 p-6 md:p-8 bg-white overflow-y-auto relative"
+                >
+                    <div
+                        class="mb-6 flex items-center space-x-2 text-sm text-gray-400"
+                    >
+                        <span
+                            class="uppercase tracking-widest"
+                            id="section-number"
+                            >Bölüm 1</span
+                        >
+                        <span>/</span>
+                        <span>5</span>
+                    </div>
+
+                    <h2
+                        id="section-title"
+                        class="text-2xl font-bold text-gray-900 mb-6 border-b pb-2"
+                    >
+                        Başlık
+                    </h2>
+
+                    <!-- İçerik Alanları (Varsayılan olarak gizli, JS ile açılacak) -->
+
+                    <!-- 1. Trafik Simülasyonu -->
+                    <div id="section-0" class="section-content hidden fade-in">
+                        <div
+                            class="flex flex-col items-center p-6 bg-gray-100 rounded-xl"
+                        >
+                            <h3 class="text-lg font-bold mb-4">
+                                Metafor: Trafik Kilitlenmesi
+                            </h3>
+                            <div
+                                class="relative w-64 h-64 bg-gray-300 rounded-lg overflow-hidden border-4 border-gray-700"
+                            >
+                                <!-- Yollar -->
+                                <div
+                                    class="absolute top-0 left-1/2 w-16 h-full bg-gray-600 -translate-x-1/2 border-l-2 border-r-2 border-dashed border-yellow-400"
+                                ></div>
+                                <div
+                                    class="absolute top-1/2 left-0 w-full h-16 bg-gray-600 -translate-y-1/2 border-t-2 border-b-2 border-dashed border-yellow-400"
+                                ></div>
+
+                                <!-- Arabalar -->
+                                <div
+                                    id="car-red"
+                                    class="car-transition absolute top-0 left-1/2 -translate-x-1/2 text-red-500"
+                                >
+                                    <i
+                                        data-lucide="car"
+                                        class="w-10 h-10 rotate-180"
+                                    ></i>
+                                </div>
+                                <div
+                                    id="car-blue"
+                                    class="car-transition absolute bottom-0 left-1/2 -translate-x-1/2 text-blue-500"
+                                >
+                                    <i data-lucide="car" class="w-10 h-10"></i>
+                                </div>
+                                <div
+                                    id="car-green"
+                                    class="car-transition absolute top-1/2 left-0 -translate-y-1/2 text-green-500"
+                                >
+                                    <i
+                                        data-lucide="car"
+                                        class="w-10 h-10 rotate-90"
+                                    ></i>
+                                </div>
+                                <div
+                                    id="car-yellow"
+                                    class="car-transition absolute top-1/2 right-0 -translate-y-1/2 text-yellow-500"
+                                >
+                                    <i
+                                        data-lucide="car"
+                                        class="w-10 h-10 -rotate-90"
+                                    ></i>
+                                </div>
+
+                                <!-- Kilit Simgesi -->
+                                <div
+                                    id="traffic-lock"
+                                    class="hidden absolute inset-0 bg-black/40 flex items-center justify-center animate-pulse"
+                                >
+                                    <i
+                                        data-lucide="lock"
+                                        class="text-red-500 w-16 h-16"
+                                    ></i>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 space-x-2">
+                                <button
+                                    onclick="toggleTraffic(true)"
+                                    id="btn-traffic-jam"
+                                    class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                                >
+                                    Kavşağa Gir (Kilitlen)
+                                </button>
+                                <button
+                                    onclick="toggleTraffic(false)"
+                                    class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                                >
+                                    Resetle
+                                </button>
+                            </div>
+                            <p
+                                class="mt-2 text-sm text-gray-600 text-center max-w-md"
+                            >
+                                Her araç ilerlemek için önündeki alanın
+                                boşalmasını bekliyor, ama o alanı diğer araç
+                                tutuyor. Kimse geri adım atmazsa (No
+                                Preemption), sonsuza kadar beklerler.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 2. Kaynak Simülasyonu -->
+                    <div id="section-1" class="section-content hidden fade-in">
+                        <div
+                            class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-xl shadow-sm"
+                        >
+                            <h3 class="text-lg font-bold mb-2">
+                                Simülasyon: Sonsuz Bakışma
+                            </h3>
+
+                            <!-- Uyarı Kutusu -->
+                            <div
+                                id="deadlock-warning"
+                                class="hidden w-full bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded animate-bounce"
+                            >
+                                <div class="flex items-center">
+                                    <i
+                                        data-lucide="alert-triangle"
+                                        class="mr-2"
+                                    ></i>
+                                    <p class="font-bold">
+                                        DEADLOCK TESPİT EDİLDİ!
+                                    </p>
+                                </div>
+                                <p class="text-sm">
+                                    A, Scanner'ı bekliyor ama B tutuyor. B,
+                                    Printer'ı bekliyor ama A tutuyor. Döngüsel
+                                    bekleme oluştu.
+                                </p>
+                            </div>
+
+                            <div
+                                class="flex justify-between w-full max-w-lg gap-4 relative"
+                            >
+                                <!-- Process A -->
+                                <div
+                                    class="flex flex-col items-center p-4 bg-blue-100 rounded-lg border-2 border-blue-400 w-1/3"
+                                >
+                                    <span class="font-bold text-blue-800 mb-2"
+                                        >Process A</span
+                                    >
+                                    <div class="text-xs text-gray-600 mb-2">
+                                        Sahip Oldukları:
+                                    </div>
+                                    <div
+                                        class="flex gap-1 mb-2 h-8"
+                                        id="resources-A"
+                                    >
+                                        <!-- JS ile doldurulacak -->
+                                    </div>
+                                    <div class="space-y-2 w-full">
+                                        <button
+                                            id="btn-a-printer"
+                                            onclick="
+                                                resourceAction('A', 'printer')
+                                            "
+                                            class="w-full text-xs py-1 px-2 rounded bg-blue-500 text-white hover:bg-blue-600"
+                                        >
+                                            Printer'ı Al
+                                        </button>
+                                        <button
+                                            id="btn-a-scanner"
+                                            onclick="
+                                                resourceAction('A', 'scanner')
+                                            "
+                                            class="w-full text-xs py-1 px-2 rounded bg-blue-300 text-blue-900 hover:bg-blue-400"
+                                        >
+                                            Scanner İste
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Center Visual -->
+                                <div
+                                    class="flex flex-col justify-center items-center gap-4 text-gray-400"
+                                >
+                                    <i
+                                        data-lucide="arrow-right"
+                                        id="arrow-top"
+                                        class="transition-transform duration-500"
+                                    ></i>
+                                    <div class="text-xs font-mono">VS</div>
+                                    <i
+                                        data-lucide="arrow-right"
+                                        id="arrow-bottom"
+                                        class="transition-transform duration-500 rotate-180"
+                                    ></i>
+                                </div>
+
+                                <!-- Process B -->
+                                <div
+                                    class="flex flex-col items-center p-4 bg-green-100 rounded-lg border-2 border-green-400 w-1/3"
+                                >
+                                    <span class="font-bold text-green-800 mb-2"
+                                        >Process B</span
+                                    >
+                                    <div class="text-xs text-gray-600 mb-2">
+                                        Sahip Oldukları:
+                                    </div>
+                                    <div
+                                        class="flex gap-1 mb-2 h-8"
+                                        id="resources-B"
+                                    >
+                                        <!-- JS ile doldurulacak -->
+                                    </div>
+                                    <div class="space-y-2 w-full">
+                                        <button
+                                            id="btn-b-scanner"
+                                            onclick="
+                                                resourceAction('B', 'scanner')
+                                            "
+                                            class="w-full text-xs py-1 px-2 rounded bg-green-500 text-white hover:bg-green-600"
+                                        >
+                                            Scanner'ı Al
+                                        </button>
+                                        <button
+                                            id="btn-b-printer"
+                                            onclick="
+                                                resourceAction('B', 'printer')
+                                            "
+                                            class="w-full text-xs py-1 px-2 rounded bg-green-300 text-green-900 hover:bg-green-400"
+                                        >
+                                            Printer İste
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-6">
+                                <button
+                                    onclick="resetResources()"
+                                    class="flex items-center px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-900"
+                                >
+                                    <i
+                                        data-lucide="rotate-ccw"
+                                        class="w-4 h-4 mr-2"
+                                    ></i>
+                                    Sıfırla
+                                </button>
+                            </div>
+                            <p class="mt-2 text-xs text-gray-500 italic">
+                                İpucu: Deadlock için önce A'ya Printer, B'ye
+                                Scanner verin. Sonra birbirlerinin elindekini
+                                isteyin.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 3. Dört Şart -->
+                    <div id="section-2" class="section-content hidden fade-in">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div
+                                class="p-4 bg-red-50 border border-red-200 rounded-lg"
+                            >
+                                <div
+                                    class="flex items-center mb-2 text-red-700 font-bold"
+                                >
+                                    <i
+                                        data-lucide="lock"
+                                        class="w-5 h-5 mr-2"
+                                    ></i>
+                                    1. Mutual Exclusion
+                                </div>
+                                <p class="text-sm text-gray-700">
+                                    Kaynak paylaşılamaz. Aynı anda sadece TEK
+                                    kişi kullanabilir. (Örn: Yazıcı, CD-ROM).
+                                </p>
+                            </div>
+                            <div
+                                class="p-4 bg-orange-50 border border-orange-200 rounded-lg"
+                            >
+                                <div
+                                    class="flex items-center mb-2 text-orange-700 font-bold"
+                                >
+                                    <i
+                                        data-lucide="pause-circle"
+                                        class="w-5 h-5 mr-2"
+                                    ></i>
+                                    2. Hold and Wait
+                                </div>
+                                <p class="text-sm text-gray-700">
+                                    Elinde zaten bir kaynak var ama açgözlülük
+                                    yapıp başkasını daha istiyor ve bekliyor.
+                                </p>
+                            </div>
+                            <div
+                                class="p-4 bg-purple-50 border border-purple-200 rounded-lg"
+                            >
+                                <div
+                                    class="flex items-center mb-2 text-purple-700 font-bold"
+                                >
+                                    <i
+                                        data-lucide="shield-alert"
+                                        class="w-5 h-5 mr-2"
+                                    ></i>
+                                    3. No Preemption
+                                </div>
+                                <p class="text-sm text-gray-700">
+                                    Zorbalık yok! Kimse kaynağı zorla başkasının
+                                    elinden alamaz. Sahibi işi bitince kendi
+                                    bırakmalı.
+                                </p>
+                            </div>
+                            <div
+                                class="p-4 bg-blue-50 border border-blue-200 rounded-lg"
+                            >
+                                <div
+                                    class="flex items-center mb-2 text-blue-700 font-bold"
+                                >
+                                    <i
+                                        data-lucide="rotate-ccw"
+                                        class="w-5 h-5 mr-2"
+                                    ></i>
+                                    4. Circular Wait
+                                </div>
+                                <p class="text-sm text-gray-700">
+                                    Bir çember oluşmalı. P1 &rarr; P2'yi, P2
+                                    &rarr; P3'ü... Pn &rarr; P1'i beklemeli.
+                                </p>
+                            </div>
+                            <div
+                                class="col-span-1 md:col-span-2 text-center p-2 bg-yellow-100 rounded text-sm font-bold text-yellow-800"
+                            >
+                                Bu 4 şartın HEPSİ aynı anda sağlanırsa DEADLOCK
+                                olur!
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Banker's Algoritması -->
+                    <div id="section-3" class="section-content hidden fade-in">
+                        <div
+                            class="bg-gray-800 text-white p-6 rounded-xl shadow-lg font-mono"
+                        >
+                            <h3
+                                class="text-xl text-yellow-400 font-bold mb-4 flex items-center"
+                            >
+                                <i data-lucide="shield" class="mr-2"></i>
+                                Banker's Algorithm Mini-Game
+                            </h3>
+
+                            <div class="grid grid-cols-2 gap-8 mb-6">
+                                <div
+                                    class="bg-gray-700 p-4 rounded text-center"
+                                >
+                                    <div class="text-gray-400 text-sm">
+                                        BANKA KASASI (Available)
+                                    </div>
+                                    <div
+                                        id="bank-available"
+                                        class="text-4xl font-bold text-green-400"
+                                    >
+                                        3
+                                    </div>
+                                    <div class="text-xs text-gray-400 mt-1">
+                                        Birim Kaynak
+                                    </div>
+                                </div>
+
+                                <div
+                                    id="p1-box"
+                                    class="p-4 rounded text-center border-2 border-blue-500 bg-blue-900/30"
+                                >
+                                    <div
+                                        class="text-blue-300 font-bold text-lg"
+                                    >
+                                        PROCESS P1
+                                    </div>
+                                    <div class="mt-2 text-sm text-left pl-4">
+                                        <div>
+                                            Elindeki (Allocated):
+                                            <span id="p1-has" class="text-white"
+                                                >1</span
+                                            >
+                                        </div>
+                                        <div>
+                                            Maksimum İhtiyaç (Max):
+                                            <span
+                                                id="p1-needs"
+                                                class="text-white"
+                                                >4</span
+                                            >
+                                        </div>
+                                        <div>
+                                            Gereken (Need):
+                                            <span
+                                                id="p1-remaining"
+                                                class="text-red-400 font-bold"
+                                                >3</span
+                                            >
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div
+                                id="bank-message"
+                                class="bg-gray-900 p-3 rounded mb-4 text-center text-sm min-h-[60px] flex items-center justify-center border border-gray-600"
+                            >
+                                İşletim Sistemi (Bankacı) sensin. P1 kaynak
+                                istiyor!
+                            </div>
+
+                            <div
+                                id="bank-controls"
+                                class="flex gap-4 justify-center"
+                            >
+                                <button
+                                    onclick="bankAction('grant')"
+                                    class="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded shadow-lg transform active:scale-95 transition-all"
+                                >
+                                    Krediyi Onayla (Safe mi?)
+                                </button>
+                                <button
+                                    onclick="bankAction('deny')"
+                                    class="px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded shadow-lg transform active:scale-95 transition-all"
+                                >
+                                    Reddet (Riskli Görünüyor)
+                                </button>
+                            </div>
+                            <div id="bank-reset" class="hidden text-center">
+                                <button
+                                    onclick="resetBankGame()"
+                                    class="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded text-sm"
+                                >
+                                    Tekrar Dene
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5. Diğer Yöntemler -->
+                    <div id="section-4" class="section-content hidden fade-in">
+                        <div class="space-y-4">
+                            <div
+                                class="bg-white p-4 rounded shadow border-l-4 border-blue-500"
+                            >
+                                <h4 class="font-bold text-blue-800">
+                                    Prevention (Önleme)
+                                </h4>
+                                <p class="text-sm text-gray-600">
+                                    4 şarttan birini bozmak. En mantıklısı
+                                    <strong>Circular Wait</strong>'i bozmak için
+                                    kaynaklara numara vermektir.
+                                </p>
+                            </div>
+                            <div
+                                class="bg-white p-4 rounded shadow border-l-4 border-yellow-500"
+                            >
+                                <h4 class="font-bold text-yellow-800">
+                                    Avoidance (Kaçınma)
+                                </h4>
+                                <p class="text-sm text-gray-600">
+                                    <strong>Banker's Algorithm</strong>
+                                    buradadır. Sistem her istekte "Güvenli mi?"
+                                    diye hesaplar. Yavaş ama güvenlidir.
+                                </p>
+                            </div>
+                            <div
+                                class="bg-white p-4 rounded shadow border-l-4 border-red-500"
+                            >
+                                <h4 class="font-bold text-red-800">
+                                    Detection & Recovery
+                                </h4>
+                                <p class="text-sm text-gray-600">
+                                    Bırak olsun. Olursa tespit et (Resource
+                                    Graph'ta döngü ara) ve birini sonlandır
+                                    (Kill Process).
+                                </p>
+                            </div>
+                            <div
+                                class="bg-white p-4 rounded shadow border-l-4 border-gray-500"
+                            >
+                                <h4 class="font-bold text-gray-800">
+                                    Ostrich Algorithm (Devekuşu)
+                                </h4>
+                                <p class="text-sm text-gray-600">
+                                    Görmezden gel! Windows ve Linux bunu yapar.
+                                    Kullanıcı bilgisayarı resetler geçer :)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Nav Buttons -->
+                    <div class="mt-8 flex justify-between pt-6 border-t">
+                        <button
+                            onclick="changeSection(-1)"
+                            id="btn-prev"
+                            class="text-gray-500 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed font-medium"
+                        >
+                            &larr; Önceki
+                        </button>
+                        <button
+                            onclick="changeSection(1)"
+                            id="btn-next"
+                            class="text-blue-600 hover:text-blue-800 disabled:opacity-30 disabled:cursor-not-allowed font-bold"
+                        >
+                            Sonraki &rarr;
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- JavaScript Mantığı -->
+        <script>
+            // --- Navigation Logic ---
+            const sections = [
+                { title: "1. Giriş: Deadlock Nedir?" },
+                { title: "2. Deadlock Nasıl Oluşur?" },
+                { title: "3. Dört Ölümcül Şart" },
+                { title: "4. Çözüm: Banker's Algorithm" },
+                { title: "5. Diğer Çözüm Yöntemleri" },
+            ];
+            let currentSection = 0;
+
+            function renderNav() {
+                const navContainer = document.getElementById("nav-buttons");
+                navContainer.innerHTML = "";
+
+                sections.forEach((sec, idx) => {
+                    const btn = document.createElement("button");
+                    const isActive = idx === currentSection;
+                    btn.className = `w-full text-left p-4 mb-2 rounded-lg transition-all duration-300 border-2 flex justify-between items-center ${isActive ? "bg-blue-50 border-blue-500 shadow-md transform scale-[1.01]" : "bg-white border-gray-200 hover:border-blue-300 hover:bg-gray-50"}`;
+                    btn.onclick = () => setSection(idx);
+
+                    let html = `<h2 class="text-md font-bold text-gray-800">${sec.title}</h2>`;
+                    if (isActive)
+                        html += `<div class="h-3 w-3 rounded-full bg-blue-500 animate-pulse"></div>`;
+
+                    btn.innerHTML = html;
+                    navContainer.appendChild(btn);
+                });
+
+                // Update main content
+                document.getElementById("section-number").innerText =
+                    `BÖLÜM ${currentSection + 1}`;
+                document.getElementById("section-title").innerText =
+                    sections[currentSection].title;
+
+                // Hide all sections, show current
+                document
+                    .querySelectorAll(".section-content")
+                    .forEach((el, idx) => {
+                        if (idx === currentSection) {
+                            el.classList.remove("hidden");
+                        } else {
+                            el.classList.add("hidden");
+                        }
+                    });
+
+                // Update footer buttons
+                document.getElementById("btn-prev").disabled =
+                    currentSection === 0;
+                document.getElementById("btn-next").disabled =
+                    currentSection === sections.length - 1;
+            }
+
+            function setSection(idx) {
+                currentSection = idx;
+                renderNav();
+            }
+
+            function changeSection(dir) {
+                const newSec = currentSection + dir;
+                if (newSec >= 0 && newSec < sections.length) {
+                    setSection(newSec);
+                }
+            }
+
+            // --- Traffic Simulation Logic ---
+            function toggleTraffic(isJammed) {
+                const btn = document.getElementById("btn-traffic-jam");
+                const lock = document.getElementById("traffic-lock");
+                const red = document.getElementById("car-red");
+                const blue = document.getElementById("car-blue");
+                const green = document.getElementById("car-green");
+                const yellow = document.getElementById("car-yellow");
+
+                if (isJammed) {
+                    btn.disabled = true;
+                    btn.classList.add("opacity-50", "cursor-not-allowed");
+                    lock.classList.remove("hidden");
+
+                    red.classList.replace("top-0", "top-1/2");
+                    red.classList.add("-translate-y-[140%]");
+
+                    blue.classList.replace("bottom-0", "bottom-1/2");
+                    blue.classList.add("translate-y-[140%]");
+
+                    green.classList.replace("left-0", "left-1/2");
+                    green.classList.add("-translate-x-[140%]");
+
+                    yellow.classList.replace("right-0", "right-1/2");
+                    yellow.classList.add("translate-x-[140%]");
+                } else {
+                    btn.disabled = false;
+                    btn.classList.remove("opacity-50", "cursor-not-allowed");
+                    lock.classList.add("hidden");
+
+                    red.classList.replace("top-1/2", "top-0");
+                    red.classList.remove("-translate-y-[140%]");
+
+                    blue.classList.replace("bottom-1/2", "bottom-0");
+                    blue.classList.remove("translate-y-[140%]");
+
+                    green.classList.replace("left-1/2", "left-0");
+                    green.classList.remove("-translate-x-[140%]");
+
+                    yellow.classList.replace("right-1/2", "right-0");
+                    yellow.classList.remove("translate-x-[140%]");
+                }
+            }
+
+            // --- Resource Deadlock Logic ---
+            let resState = {
+                printer: 0, // 0:free, 1:A, 2:B
+                scanner: 0,
+                wantA: null, // null, 'scanner'
+                wantB: null, // null, 'printer'
+            };
+
+            function updateResourceUI() {
+                // Icons
+                const iconPrinter = `<i data-lucide="printer" class="text-indigo-600 w-5 h-5 inline"></i>`;
+                const iconScanner = `<i data-lucide="scan" class="text-indigo-600 w-5 h-5 inline"></i>`;
+
+                // A Resources
+                let htmlA = "";
+                if (resState.printer === 1) htmlA += iconPrinter;
+                if (resState.scanner === 1) htmlA += iconScanner;
+                document.getElementById("resources-A").innerHTML = htmlA;
+
+                // B Resources
+                let htmlB = "";
+                if (resState.printer === 2) htmlB += iconPrinter;
+                if (resState.scanner === 2) htmlB += iconScanner;
+                document.getElementById("resources-B").innerHTML = htmlB;
+
+                // Buttons A
+                const btnAPrinter = document.getElementById("btn-a-printer");
+                const btnAScanner = document.getElementById("btn-a-scanner");
+
+                if (resState.printer === 0) {
+                    btnAPrinter.innerText = "Printer'ı Al";
+                    btnAPrinter.className =
+                        "w-full text-xs py-1 px-2 rounded bg-blue-500 text-white hover:bg-blue-600";
+                    btnAPrinter.disabled = false;
+                } else if (resState.printer === 1) {
+                    btnAPrinter.innerText = "Printer Bende";
+                    btnAPrinter.className =
+                        "w-full text-xs py-1 px-2 rounded bg-gray-300 text-gray-500 cursor-not-allowed";
+                    btnAPrinter.disabled = true;
+                } else {
+                    btnAPrinter.innerText = "B Aldı :(";
+                    btnAPrinter.className =
+                        "w-full text-xs py-1 px-2 rounded bg-gray-300 text-gray-500 cursor-not-allowed";
+                    btnAPrinter.disabled = true;
+                }
+
+                if (resState.scanner === 1) {
+                    btnAScanner.innerText = "Scanner Bende";
+                    btnAScanner.className =
+                        "w-full text-xs py-1 px-2 rounded bg-gray-300 text-gray-500 cursor-not-allowed";
+                    btnAScanner.disabled = true;
+                } else if (resState.wantA === "scanner") {
+                    btnAScanner.innerText = "Scanner Bekleniyor...";
+                    btnAScanner.className =
+                        "w-full text-xs py-1 px-2 rounded bg-yellow-400 text-black animate-pulse";
+                    btnAScanner.disabled = true;
+                } else {
+                    btnAScanner.innerText = "Scanner İste";
+                    btnAScanner.className =
+                        "w-full text-xs py-1 px-2 rounded bg-blue-300 text-blue-900 hover:bg-blue-400";
+                    btnAScanner.disabled = false;
+                }
+
+                // Buttons B
+                const btnBScanner = document.getElementById("btn-b-scanner");
+                const btnBPrinter = document.getElementById("btn-b-printer");
+
+                if (resState.scanner === 0) {
+                    btnBScanner.innerText = "Scanner'ı Al";
+                    btnBScanner.className =
+                        "w-full text-xs py-1 px-2 rounded bg-green-500 text-white hover:bg-green-600";
+                    btnBScanner.disabled = false;
+                } else if (resState.scanner === 2) {
+                    btnBScanner.innerText = "Scanner Bende";
+                    btnBScanner.className =
+                        "w-full text-xs py-1 px-2 rounded bg-gray-300 text-gray-500 cursor-not-allowed";
+                    btnBScanner.disabled = true;
+                } else {
+                    btnBScanner.innerText = "A Aldı :(";
+                    btnBScanner.className =
+                        "w-full text-xs py-1 px-2 rounded bg-gray-300 text-gray-500 cursor-not-allowed";
+                    btnBScanner.disabled = true;
+                }
+
+                if (resState.printer === 2) {
+                    btnBPrinter.innerText = "Printer Bende";
+                    btnBPrinter.className =
+                        "w-full text-xs py-1 px-2 rounded bg-gray-300 text-gray-500 cursor-not-allowed";
+                    btnBPrinter.disabled = true;
+                } else if (resState.wantB === "printer") {
+                    btnBPrinter.innerText = "Printer Bekleniyor...";
+                    btnBPrinter.className =
+                        "w-full text-xs py-1 px-2 rounded bg-yellow-400 text-black animate-pulse";
+                    btnBPrinter.disabled = true;
+                } else {
+                    btnBPrinter.innerText = "Printer İste";
+                    btnBPrinter.className =
+                        "w-full text-xs py-1 px-2 rounded bg-green-300 text-green-900 hover:bg-green-400";
+                    btnBPrinter.disabled = false;
+                }
+
+                // Deadlock Check
+                const isDeadlock =
+                    resState.printer === 1 &&
+                    resState.wantA === "scanner" &&
+                    resState.scanner === 2 &&
+                    resState.wantB === "printer";
+                const warningBox = document.getElementById("deadlock-warning");
+                const arrowTop = document.getElementById("arrow-top");
+                const arrowBottom = document.getElementById("arrow-bottom");
+
+                if (isDeadlock) {
+                    warningBox.classList.remove("hidden");
+                    arrowTop.classList.add(
+                        "rotate-180",
+                        "text-red-500",
+                        "scale-150",
+                    );
+                    arrowBottom.classList.add(
+                        "rotate-180",
+                        "text-red-500",
+                        "scale-150",
+                    );
+                } else {
+                    warningBox.classList.add("hidden");
+                    arrowTop.classList.remove(
+                        "rotate-180",
+                        "text-red-500",
+                        "scale-150",
+                    );
+                    arrowBottom.classList.remove(
+                        "rotate-180",
+                        "text-red-500",
+                        "scale-150",
+                    );
+                }
+
+                // Re-initialize icons since we injected HTML
+                lucide.createIcons();
+            }
+
+            function resourceAction(proc, type) {
+                if (proc === "A") {
+                    if (type === "printer" && resState.printer === 0)
+                        resState.printer = 1;
+                    if (type === "scanner" && resState.scanner === 2)
+                        resState.wantA = "scanner"; // Only want if B has it or free logic but simplified here
+                    if (type === "scanner" && resState.scanner === 0)
+                        resState.scanner = 1; // Direct take if free (optional logic change)
+                }
+                if (proc === "B") {
+                    if (type === "scanner" && resState.scanner === 0)
+                        resState.scanner = 2;
+                    if (type === "printer" && resState.printer === 1)
+                        resState.wantB = "printer";
+                    if (type === "printer" && resState.printer === 0)
+                        resState.printer = 2;
+                }
+                updateResourceUI();
+            }
+
+            function resetResources() {
+                resState = { printer: 0, scanner: 0, wantA: null, wantB: null };
+                updateResourceUI();
+            }
+
+            // --- Banker's Algorithm Logic ---
+            let bankState = {
+                available: 3,
+                p1: { has: 1, needs: 4, status: "running" },
+            };
+
+            function updateBankUI(msg, type) {
+                document.getElementById("bank-available").innerText =
+                    bankState.available;
+                document.getElementById("p1-has").innerText = bankState.p1.has;
+                document.getElementById("p1-needs").innerText =
+                    bankState.p1.needs;
+                document.getElementById("p1-remaining").innerText =
+                    bankState.p1.needs - bankState.p1.has;
+
+                const msgBox = document.getElementById("bank-message");
+                msgBox.innerText = msg;
+
+                const p1Box = document.getElementById("p1-box");
+                if (bankState.p1.status === "finished") {
+                    p1Box.className =
+                        "p-4 rounded text-center border-2 border-green-500 bg-green-900/30";
+                } else {
+                    p1Box.className =
+                        "p-4 rounded text-center border-2 border-blue-500 bg-blue-900/30";
+                }
+
+                const controls = document.getElementById("bank-controls");
+                const resetDiv = document.getElementById("bank-reset");
+
+                if (type === "playing") {
+                    controls.classList.remove("hidden");
+                    resetDiv.classList.add("hidden");
+                } else {
+                    controls.classList.add("hidden");
+                    resetDiv.classList.remove("hidden");
+                }
+            }
+
+            function bankAction(action) {
+                if (action === "deny") {
+                    updateBankUI(
+                        "🛑 İstek reddedildi. P1 bekletiliyor. Sistem güvenli ama iş ilerlemiyor.",
+                        "ended",
+                    );
+                    return;
+                }
+
+                // Grant logic
+                const request = bankState.p1.needs - bankState.p1.has;
+                if (request > bankState.available) {
+                    updateBankUI(
+                        "❌ HATA: Kasada yeterli kaynak yok! İsteği karşılayamazsın.",
+                        "ended",
+                    );
+                    return;
+                }
+
+                // Simulate allocation
+                bankState.available -= request;
+                bankState.p1.has = bankState.p1.needs;
+
+                // Temporary UI update
+                document.getElementById("bank-available").innerText =
+                    bankState.available;
+                document.getElementById("p1-has").innerText = bankState.p1.has;
+                document.getElementById("p1-remaining").innerText = 0;
+                document.getElementById("bank-message").innerText =
+                    "✅ Kaynak verildi! P1 işini bitirip tüm kaynakları iade edecek...";
+                document
+                    .getElementById("bank-controls")
+                    .classList.add("hidden");
+
+                setTimeout(() => {
+                    bankState.available += bankState.p1.needs; // Returns all
+                    bankState.p1.has = 0;
+                    bankState.p1.status = "finished";
+                    updateBankUI(
+                        "🎉 Harika! P1 bitti, kaynaklar iade edildi. Sistem Güvenli (Safe State).",
+                        "ended",
+                    );
+                }, 1500);
+            }
+
+            function resetBankGame() {
+                bankState = {
+                    available: 3,
+                    p1: { has: 1, needs: 4, status: "running" },
+                };
+                updateBankUI(
+                    "İşletim Sistemi (Bankacı) sensin. P1 kaynak istiyor!",
+                    "playing",
+                );
+            }
+
+            // --- Init ---
+            window.onload = function () {
+                renderNav();
+                updateResourceUI();
+                lucide.createIcons();
+            };
+        </script>
+    </body>
+</html>

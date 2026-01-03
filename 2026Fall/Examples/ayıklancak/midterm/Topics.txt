@@ -1,0 +1,52 @@
+İşletim sistemi tanımını bil ve Örnek ver.
+Ekstra puan için sorular olabilirmiş.
+Storage Hierarchy bilin Registers > Cache > Main Memory > Solid State Disk > Hard Disk > Optical Disk > Magnetic Disk
+Boşluk doldurma sorabilir
+True false olabilir.
+Lan Man WAN PAN onlara bak. Local Area Network, Metropolitan Area Network, Wide Area Network, Personal Area Network
+Emulation Virtualization. Emulation farklı bir sistemi emule eder. Virtualization aynı sistemi simule eder.
+İşletim sistemindeki bi api ya parametre geçimi ne üzerinden olur? Registers üzerinden olabilir. Register ile memory addresi verilebilir.
+Loadable kermel avantajı : OO yaklaşımı. Modularity. Bazı işlemler kernelden ayrılır böylece sistem çökmez. Fragmantation penalty olabilir.
+Monolitch vs Mickernel : Mono - Tüm OS kernelde çalışır. Micro - Çoğu işlem kernel dışında. Min software gerektirir. 
+Core dump crash dump : Core dump - Memory of the process. App failure  Crash Dump - Kernel memory, OS failure
+********
+Forkdan kod sorusu olacak
+********
+Entry sectionların blocklamalrı ile alakalı code sorusunun olası bütün çıktılar (Senkronizasyon)
+Bir processin yapı taşları ( heap stack data section vs). Stack : Temp. data, Heap : Allocated memory, Data: Global variables Text: Code
+Process states ve Diagramı. new --(admitted)--> ready <--(interrupt)(scheduler dispatch)-->running --(I/O event wait)-->wait--(I/O event compliation)-->ready or running--(exit)-->terminated
+PCB. Process control block. Process state - Program Counter - Registers - Memory Limits - Open Files - CPU Scheduling Information
+Scheduler ( short term önemli ) - Short Term : Hangi process çalışacak ? Hızlıdır. Long Term : Hangi process ready olacak. Yavaş olabilir
+FORKU RETURN DEĞERİ DAHİL BİL 
+Process treeyi BİL. 
+Zombie ve Orphan Process. Zombie : Parent wait durumuna geçmez. İkisi de çalışır. Orphan : Parent child'dan önce terminated olur.
+Message Passing ve Shared memory. Message Passing : Kernelde buffer var. Yavaş çünkü işlemler kernelde yapılır. Shared Memory : İki process arasında bir memory var. Kernel yok o yüzden hızlı
+Bounded Unbounded BİL. Bounded Buffer : Fixed buffer size var. Dolu olursa sorun olabilir. Unbounded Buffer : Limit yok
+RPC sorabilir. Remote Prodecure Call : Farklı sistemdeki processler için IPC sistemi. Networked sistemlerde kullanılır. Port kullanılır
+pipelar. Pipe : Farklı sistemdeki processler için IPC sistemi. Unidirectional. Producer bir uçtan produce yapar. Consumer diğer uçtan consume eder.
+
+Thread light-heavyweight. Process creation : Heavy Weight Thread Creation : Light Weight
+thread avantaj- dezavantaj
+avantaj :
+Responsiveness : Processin bir kısmı bloklansa bile çalışmaya devam eder. 
+Resource Sharing : Processin resourcelarını paylaşır. Shared memory ve message passingeten kolaydır. 
+Economy : Process creating ve context switchingten ucuzdur. 
+Scalability.
+ Dezavantaj : Kontrol etmesi ve kodlaması zor olabilir. 
+Multicore challange Identifying Tasks, Data Splitting, Balance, Data Dependency
+Concurrency execution sorusu.
+Amdahl’s Law speedup <= 1/(S + (1-S/N)) N --> sonsuzda speedup --> 1/S
+
+Parallelism türleri Data Paralellism : Her core aynı işi yapar. - Task Paralellism : Her core farklı işi yapar.
+Posix nedir bil Posix : Unix temelli sistemler için IEEE'nin getirdiği IPC standardı. Shared memory kullanır
+Impclit Threading ve Expclit Thread farkı  Explicit Threading : Thread oluşturmak ve yönetmek için yazılımsal çözümler. Yönetmesi zor olabilir. Implicit Threads : Donanımsal çözümler. 
+Critical Section nedir ve çözmek için neler kullanılıyor ? Her processin bir critical sectionu vardır. Burada veri güncelleme gibi işlemler yapılır. 
+Ortak çalışan processlerde bu veri sürekli değişeceğinden sorun oluşabilir. Mutex, Progress, Bounded-Waiting
+Petersons Solution. İki process için bir çözümdür. Sırayı diğerine verme ilkesine dayanır. Critical sectiona girmek isteyen processin flag'i true yapılır. 
+Ama sıra diğer processe verilir. Diğer proces için flag&&sıra doğru ise beklenir. Critical sectiondan sonra flag false yapılır.
+Atomic Func. Atomic functionlar interruptlar ile kesilemez. Bitene kadar çalışır.
+Mutex Locks. Critical section problemi için bir çözümdür. available değişkeni false yapılır. critical sectiondan sonra true yapılır.
+Semaphore.Bir S değişkeni var ve critical section'a girildiğinde artıyor. Kaç processin oraya erişmesini istiyorsak başlangıç değerimizi belirliyoruz.
+S o değere ulaşınca kimse critical sectiona giremiyor. Critical sectiondan sonra başkaları da girebilsin diye S azaltılıyor.
+
+ 

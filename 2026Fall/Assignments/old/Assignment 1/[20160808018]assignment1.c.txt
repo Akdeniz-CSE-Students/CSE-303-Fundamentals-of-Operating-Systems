@@ -1,0 +1,34 @@
+/* Hilal Şentürk 
+   20160808018
+*/
+
+#include <stmain()
+{
+float Mvar;
+float Nvar;
+float cTemp;
+
+printf("\n\tÇevirmek istediğiniz Fahrenheit değerinin ilk değerini giriniz: ", Mvar);
+
+scanf("%d", &Mvar);
+printf("\tMvar: %d ", Mvar);
+
+
+
+printf("\n\n\Çevirmek istediğiniz Fahrenheit değerinin son değerini giriniz: ", Nvar);
+
+scanf("%f", &Nvar);
+printf("\tNvar: %d ", Nvar);
+
+
+ for( float i = mVar; i <= nVar ; i += 10)
+    { 
+      tempC = (mVar - 32 ) / 1.8;
+      printf("%d\n" ,tempC);
+    }
+ 
+return 0;
+ 
+
+
+} 
